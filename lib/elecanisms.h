@@ -32,9 +32,9 @@
 #include <stdint.h>
 
 // LED pin definitions
-#define LED1                PORTDbits.RD7
-#define LED2                PORTFbits.RF0
-#define LED3                PORTFbits.RF1
+#define LED1                LATDbits.LATD7
+#define LED2                LATFbits.LATF0
+#define LED3                LATFbits.LATF1
 
 #define LED1_DIR            TRISDbits.TRISD7
 #define LED2_DIR            TRISFbits.TRISF0
@@ -59,7 +59,7 @@
 #define D6                  PORTDbits.RD8
 #define D7                  PORTDbits.RD11
 #define D8                  PORTDbits.RD9
-#define D9                  PORTDbits.D10
+#define D9                  PORTDbits.RD10
 #define D10                 PORTDbits.RD0
 #define D11                 PORTDbits.RD1
 #define D12                 PORTDbits.RD2
