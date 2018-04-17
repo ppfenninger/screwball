@@ -14,8 +14,8 @@ int16_t main(void) {
 
     servo_offset = (uint16_t)(FCY * SERVO_MIN_WIDTH);
     servo_multiplier = (uint16_t)(FCY * (SERVO_MAX_WIDTH - SERVO_MIN_WIDTH));
-    servo1 = 32768;
-    servo2 = 32768;
+    servo1 = 32568;
+    servo2 = 32788;
 
     // Configure pin D13 and D12 to produce hobby servo control signals
     // using the OC1 and OC2 modules, respectively.
@@ -72,21 +72,21 @@ int16_t main(void) {
 			ison = 1; 
 		}
 		while(ison){
-			if (D1 == 1 && servo1 < 34768){
+			if (D1 == 1 && servo1 < 32768){
 				servo1 = servo1 + 1; 
 				LED2 = 1; 
 			}
-			else if (D2 == 1 && servo1 > 30768){
+			else if (D2 == 1 && servo1 > 32368){
 				servo1 = servo1 - 1;
 				LED2 = 0; 
 			}
 
-			if (D3 == 1 && servo2 < 34768){
-				servo2 = servo2 + 1;;
+			if (D3 == 1 && servo2 < 32988){
+				servo2 = servo + 1;
 				LED3 = 1;
 			}
-			else if (D4 == 1 && servo2 > 30768){
-				servo2 = servo2 - 1;;
+			else if (D4 == 1 && servo2 > 32588){
+				servo2 = servo - 1;
 				LED3 = 0; 
 			}
 			OC1RS = servo1*servo_multiplier + servo_offset;
