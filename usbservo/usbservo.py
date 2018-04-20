@@ -36,16 +36,19 @@ class usbservo:
         self.READ_SW2 = 4
         self.READ_SW3 = 5
         self.READ_A0 = 6 
-        self.SET_SERVO1 = 7
-        self.SET_SERVO2 = 8
-        self.SET_SERVO3 = 9
-        self.SET_SERVO4 = 10
-        self.SET_SERVO5 = 11
-        self.READ_D0 = 12
-        self.READ_D1 = 13
-        self.READ_D2 = 14
-        self.READ_D3 = 15
-        self.READ_D4 = 16
+        self.READ_A1 = 7
+        self.READ_A2 = 8
+        self.READ_A3 = 9
+        self.SET_SERVO1 = 10
+        self.SET_SERVO2 = 11
+        self.SET_SERVO3 = 12
+        self.SET_SERVO4 = 13
+        self.SET_SERVO5 = 14
+        self.READ_D0 = 15
+        self.READ_D1 = 16
+        self.READ_D2 = 17
+        self.READ_D3 = 18
+        self.READ_D4 = 19
 
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
@@ -103,6 +106,30 @@ class usbservo:
             ret = self.dev.ctrl_transfer(0xC0, self.READ_A0, 0, 0, 2)
         except usb.core.USBError:
             print "Could not send READ_A0 vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+
+    def read_a1(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_A1, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send READ_A1 vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+
+    def read_a2(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_A2, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send READ_A2 vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+
+    def read_a3(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.READ_A3, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send READ_A3 vendor request."
         else:
             return int(ret[0]) + 256 * int(ret[1])
 

@@ -35,16 +35,19 @@
 #define READ_SW2            4
 #define READ_SW3            5
 #define READ_A0             6
-#define SET_SERVO1          7
-#define SET_SERVO2          8
-#define SET_SERVO3          9
-#define SET_SERVO4          10
-#define SET_SERVO5          11
-#define READ_D0             12
-#define READ_D1             13
-#define READ_D2             14
-#define READ_D3             15
-#define READ_D4             16
+#define READ_A1             7
+#define READ_A2             8
+#define READ_A3             9
+#define SET_SERVO1          10
+#define SET_SERVO2          11
+#define SET_SERVO3          12
+#define SET_SERVO4          13
+#define SET_SERVO5          14
+#define READ_D0             15
+#define READ_D1             16
+#define READ_D2             17
+#define READ_D3             18
+#define READ_D4             19
 
 #define SERVO_MIN_WIDTH     900e-6
 #define SERVO_MAX_WIDTH     2.1e-3
@@ -88,6 +91,27 @@ void vendor_requests(void) {
             break;
         case READ_A0:
             temp.w = read_analog(A0_AN);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case READ_A1:
+            temp.w = read_analog(A1_AN);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case READ_A2:
+            temp.w = read_analog(A2_AN);
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case READ_A3:
+            temp.w = read_analog(A3_AN);
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;
@@ -178,6 +202,11 @@ int16_t main(void) {
 
     D9_DIR = OUT;      // configure D9 to be a digital output
     D9 = 0;            // set D9 low
+
+    A0_DIR = IN;       // configure A0, A1, A2, A3 to be analog input
+    A1_DIR = IN; 
+    A2_DIR = IN; 
+    A3_DIR = IN; 
 
 
 

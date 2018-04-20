@@ -32,10 +32,15 @@ int horizontalval = 0;
 int verticalval = 0;
 boolean buttonval = 0;
 
+  
+int zero_horizontal;
+int zero_vertical;
+boolean zero_button;
+
 void setup() {
 
   Wire.begin();        // join i2c bus
-  Serial.begin(9600);  // start serial for output
+  Serial.begin(14400);  // start serial for output
 
   // Print the address currently in EEPROM on the Joystiic
   Serial.print("Slave Address in EEPROM: 0x");
@@ -43,6 +48,16 @@ void setup() {
   
   horizontalservo.attach(9);  // attaches the servo on pin 9 to the servo object 
   verticalservo.attach(8);  // attaches the servo on pin 9 to the servo object 
+  
+  delay(100);
+  
+  while ((zero_horizontal > 1023) | (zero_horizontal < 0) | (zero_vertical > 1023) | (zero_vertical < 0) | (zero_button > 1) | (zero_button < 0)){
+    Serial.println("Start Values Are Errored");
+    zero_horizontal = getHorizontal();
+    zero_vertical = getVertical();
+    zero_button = getButton();
+  }
+  
 
 }
 
@@ -52,8 +67,20 @@ void loop() {
   verticalval = getVertical();
   buttonval = getButton();
   
+  if ((buttonval == 1) | (buttonval == 0)){
   
-
+  if (abs(horizontalval - zero_horizontal) < 10){
+    horizontalval = zero_horizontal;
+  }
+  if (abs(verticalval - zero_vertical) < 10){
+    verticalval = zero_vertical;
+  }
+  
+  if ((horizontalval == 496) && (verticalval == 486)){
+    Serial.println("zero");
+    ;
+  }
+  else{
   Serial.print("H: ");
   Serial.println(horizontalval);
   Serial.print("V: ");
@@ -61,14 +88,29 @@ void loop() {
   Serial.print("B: ");
   Serial.println(buttonval);
   Serial.println();
+  }
   
-  if ((horizontalval < 1023) | (horizontalval > 0)){
+  
+
+  
+  if ((horizontalval < 1023) && (horizontalval > 0)){
     horizontalservo.write(map(horizontalval, 0, 1023, 120, 80));
   }
-  if ((verticalval < 1023) | (verticalval > 0)){
+  if ((verticalval < 1023) && (verticalval > 0)){
     verticalservo.write(map(verticalval, 0, 1023, 67, 100));
   }
  delay(40);
+  }
+  else{
+    Serial.println("buttonval is error");
+  Serial.print("H: ");
+  Serial.println(horizontalval);
+  Serial.print("V: ");
+  Serial.println(verticalval);
+  Serial.print("B: ");
+  Serial.println(buttonval);
+  Serial.println();
+  }
   
 
 }
