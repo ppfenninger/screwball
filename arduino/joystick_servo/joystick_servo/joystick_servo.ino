@@ -22,97 +22,172 @@ Connect SCL to A5, SDA to A4
 #include <Wire.h>
 #include <Servo.h> 
  
-Servo horizontalservo;  // create servo object to control a servo 
-Servo verticalservo;  // create servo object to control a servo 
+Servo horizontalservo_j1;  // create servo object to control a servo 
+Servo verticalservo_j1;  // create servo object to control a servo 
+
+Servo horizontalservo_j2;  // create servo object to control a servo 
+Servo verticalservo_j2;  // create servo object to control a servo 
 
 
 byte DEV_ADDR = 0x20;
-int reading = 0;
-int horizontalval = 0;
-int verticalval = 0;
-boolean buttonval = 0;
+byte JOY2_ADDR = 0x02; //joystick #2
+byte JOY1_ADDR = 0x20; //joystick #3
 
-  
-int zero_horizontal;
-int zero_vertical;
-boolean zero_button;
+int reading = 0;
+int horizontalval_j2 = 0;
+int verticalval_j2 = 0;
+boolean buttonval_j2 = 0;
+
+int horizontalval_j1 = 0;
+int verticalval_j1 = 0;
+boolean buttonval_j1 = 0;
+
+int zero_horizontal_j1;
+int zero_vertical_j1;
+int prev_horizontal_j1 = 0;
+int prev_vertical_j1 = 0;
+int horizontal_write_j1 = 0;
+int vertical_write_j1 = 0;
+
+int zero_horizontal_j2;
+int zero_vertical_j2;
+int prev_horizontal_j2 = 0;
+int prev_vertical_j2 = 0;
+int horizontal_write_j2 = 0;
+int vertical_write_j2 = 0;
+
+unsigned long previousMillis = 0;    
+const long interval = 40;
+
+bool j1_turn = 0;
 
 void setup() {
 
   Wire.begin();        // join i2c bus
-  Serial.begin(14400);  // start serial for output
+  Serial.begin(9600);  // start serial for output
 
   // Print the address currently in EEPROM on the Joystiic
   Serial.print("Slave Address in EEPROM: 0x");
-  Serial.println(getAddr(), HEX);
+  Serial.println(getAddr(JOY1_ADDR), HEX);
+
+  Serial.print("Slave Address in EEPROM: 0x");
+  Serial.println(getAddr(JOY2_ADDR), HEX);
   
-  horizontalservo.attach(9);  // attaches the servo on pin 9 to the servo object 
-  verticalservo.attach(8);  // attaches the servo on pin 9 to the servo object 
-  
-  delay(100);
-  
-  while ((zero_horizontal > 1023) | (zero_horizontal < 0) | (zero_vertical > 1023) | (zero_vertical < 0) | (zero_button > 1) | (zero_button < 0)){
-    Serial.println("Start Values Are Errored");
-    zero_horizontal = getHorizontal();
-    zero_vertical = getVertical();
-    zero_button = getButton();
-  }
-  
+  horizontalservo_j1.attach(9);  // attaches the servo on pin 9 to the servo object 
+  verticalservo_j1.attach(8);  // attaches the servo on pin 9 to the servo object 
+
+  horizontalservo_j2.attach(7);  // attaches the servo on pin 9 to the servo object 
+  verticalservo_j2.attach(6);  // attaches the servo on pin 9 to the servo object 
+
+  horizontalservo_j1.write(100);
+  verticalservo_j1.write(84);
+
+  horizontalservo_j2.write(100);
+  verticalservo_j2.write(84);
+
+  zero_horizontal_j1 = getHorizontal(JOY1_ADDR);
+  zero_vertical_j1 = getVertical(JOY1_ADDR);
+  zero_horizontal_j2 = getHorizontal(JOY2_ADDR);
+  zero_vertical_j2 = getVertical(JOY2_ADDR);
+  setAddr(2);
 
 }
 
 void loop() {
-  
-  horizontalval = getHorizontal();
-  verticalval = getVertical();
-  buttonval = getButton();
-  
-  if ((buttonval == 1) | (buttonval == 0)){
-  
-  if (abs(horizontalval - zero_horizontal) < 10){
-    horizontalval = zero_horizontal;
-  }
-  if (abs(verticalval - zero_vertical) < 10){
-    verticalval = zero_vertical;
-  }
-  
-  if ((horizontalval == 496) && (verticalval == 486)){
-    Serial.println("zero");
-    ;
+  unsigned long currentMillis = millis();
+
+  //joystick 1
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    if (j1_turn){
+      runJ1();
+      j1_turn = 0;
+    }
+    else{
+      runJ2();
+      j1_turn = 1;
+    }
+    
   }
   else{
-  Serial.print("H: ");
-  Serial.println(horizontalval);
-  Serial.print("V: ");
-  Serial.println(verticalval);
-  Serial.print("B: ");
-  Serial.println(buttonval);
-  Serial.println();
+    horizontalservo_j1.write(horizontal_write_j1);
+    verticalservo_j1.write(vertical_write_j1);
+    horizontalservo_j2.write(horizontal_write_j2);
+    verticalservo_j2.write(vertical_write_j2);
   }
   
-  
+}
 
+
+// Run the joystick reading and servo writing for joystick 1
+void runJ1() {
   
-  if ((horizontalval < 1023) && (horizontalval > 0)){
-    horizontalservo.write(map(horizontalval, 0, 1023, 120, 80));
-  }
-  if ((verticalval < 1023) && (verticalval > 0)){
-    verticalservo.write(map(verticalval, 0, 1023, 67, 100));
-  }
- delay(40);
+  horizontalval_j1 = getHorizontal(JOY1_ADDR);
+  verticalval_j1 = getVertical(JOY1_ADDR);
+  buttonval_j1 = getButton(JOY1_ADDR);
+
+  Serial.print("H1: ");
+  Serial.println(horizontalval_j1);
+  Serial.print("V1: ");
+  Serial.println(verticalval_j1);
+  Serial.print("B1: ");
+  Serial.println(buttonval_j1);
+  Serial.println();
+
+  if ((horizontalval_j1 < 1024) & (horizontalval_j1 > -1)){
+    horizontal_write_j1 = int(map(horizontalval_j1, -1, 1024, 120, 80));
+    horizontalservo_j1.write(horizontal_write_j1);
   }
   else{
-    Serial.println("buttonval is error");
-  Serial.print("H: ");
-  Serial.println(horizontalval);
-  Serial.print("V: ");
-  Serial.println(verticalval);
-  Serial.print("B: ");
-  Serial.println(buttonval);
-  Serial.println();
+    Serial.print("HORIZONTAL OUT OF RANGE");
   }
-  
 
+  if ((verticalval_j1 < 1024) & (verticalval_j1 > -1)){
+    vertical_write_j1 = int(map(verticalval_j1, -1, 1024, 67, 100));
+    verticalservo_j1.write(vertical_write_j1);
+  }
+  else{
+    Serial.print("VERTICAL OUT OF RANGE");
+  }
+
+  prev_vertical_j1 = verticalval_j1;
+  prev_horizontal_j1 = horizontalval_j1;
+}
+
+
+// Runs the joystick reading and servo writing for joystick 2
+void runJ2() {
+  horizontalval_j2 = getHorizontal(JOY2_ADDR);
+  verticalval_j2 = getVertical(JOY2_ADDR);
+  buttonval_j2 = getButton(JOY2_ADDR);
+
+  Serial.print("H2: ");
+  Serial.println(horizontalval_j2);
+  Serial.print("V2: ");
+  Serial.println(verticalval_j2);
+  Serial.print("B2: ");
+  Serial.println(buttonval_j2);
+  Serial.println();
+
+  if ((horizontalval_j2 < 1024) & (horizontalval_j2 > -1)){
+    horizontal_write_j2 = int(map(horizontalval_j2, -1, 1024, 120, 80));
+    horizontalservo_j2.write(horizontal_write_j2);
+  }
+  else{
+    Serial.print("HORIZONTAL OUT OF RANGEL");
+  }
+
+  if ((verticalval_j2 < 1024) & (verticalval_j2 > -1)){
+    vertical_write_j2 = int(map(verticalval_j2, -1, 1024, 67, 100));
+    verticalservo_j2.write(vertical_write_j2);
+  }
+  else{
+    Serial.print("VERTICAL OUT OF RANGE");
+  } 
+    prev_vertical_j2 = verticalval_j2;
+    prev_horizontal_j2 = horizontalval_j2;
 }
 
 
@@ -121,12 +196,12 @@ void loop() {
 // (axis indicated by silkscreen on the board)
 // centered roughly on 512
 
-int getHorizontal() {
+int getHorizontal(byte ADDR) {
 
-  Wire.beginTransmission(DEV_ADDR);
+  Wire.beginTransmission(ADDR);
   Wire.write(0x00);
   Wire.endTransmission(false);
-  Wire.requestFrom(DEV_ADDR, 2);
+  Wire.requestFrom(ADDR, 2);
 
   while (Wire.available()) {
     uint8_t msb = Wire.read();
@@ -144,12 +219,12 @@ int getHorizontal() {
 // (axis indicated by silkscreen on the board)
 // centered roughly on 512
 
-int getVertical() {
+int getVertical(byte ADDR) {
 
-  Wire.beginTransmission(DEV_ADDR);
+  Wire.beginTransmission(ADDR);
   Wire.write(0x02);
   Wire.endTransmission(false);
-  Wire.requestFrom(DEV_ADDR, 2);
+  Wire.requestFrom(ADDR, 2);
 
   while (Wire.available()) {
     uint8_t msb = Wire.read();
@@ -166,14 +241,14 @@ int getVertical() {
 // position of the button where a 0b1 is not
 // pressed and 0b0 is pressed
 
-byte getButton() {
+byte getButton(byte ADDR) {
 
   byte btnbyte = 0b00000000;
 
-  Wire.beginTransmission(DEV_ADDR);
+  Wire.beginTransmission(ADDR);
   Wire.write(0x04);
   Wire.endTransmission(false);
-  Wire.requestFrom(DEV_ADDR, 1);    // request 1 byte
+  Wire.requestFrom(ADDR, 1);    // request 1 byte
 
   while (Wire.available()) {
     btnbyte = Wire.read();
@@ -194,14 +269,14 @@ byte getButton() {
 // result, this call can be used to confirm
 // that a setAddr() call was successful.
 
-byte getAddr() {
+byte getAddr(byte ADDR) {
 
   byte addr = 0x00;
 
-  Wire.beginTransmission(DEV_ADDR);
+  Wire.beginTransmission(ADDR);
   Wire.write(0x06);
   Wire.endTransmission(false);
-  Wire.requestFrom(DEV_ADDR, 1);    // request 1 byte
+  Wire.requestFrom(ADDR, 1);    // request 1 byte
 
   while (Wire.available()) {
     addr = Wire.read();
@@ -224,7 +299,7 @@ byte getAddr() {
 
 void setAddr(byte addr) {
 
-  Wire.beginTransmission(DEV_ADDR);
+  Wire.beginTransmission(0x02);
   Wire.write(0x05);
   Wire.write(addr);
   Wire.endTransmission();
