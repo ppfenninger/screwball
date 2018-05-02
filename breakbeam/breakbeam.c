@@ -3,17 +3,26 @@
 int16_t main(void) {
     init_elecanisms();
 
-    LED1 = 0;
-    D3_DIR = OUT;
+    D1_DIR = OUT;
+    __asm__("nop");
+    D2_DIR = OUT;
+    __asm__("nop");
+
+    D1 = 0; 
+    D2 = 0; 
+    D12 = 0; 
 
 	while(1) {
-		if (SW1 == 0){
-			D3 = 1;  
-			LED1 = 1;
+
+
+
+		if (D12){
+			D1 = 1; 
+			D2 = 1; 
 		}
 		else{
-			D3 = 0;
-			LED1 = 0;
+			D1 = 0;
+			D2 = 0; 
 		}
 	}
 }

@@ -10,33 +10,36 @@
 
 int16_t main(void) {
     init_elecanisms();
-    uint8_t gameOn, gameStart, win, winRight, winLeft, timeOver, ballExitLeft, ballExitRight, buttonUp, D4up, D5up, *RPOR, *RPINR;
+    uint8_t gameOn, gameStart, win, winRight, winLeft, timeOver, ballExitLeft, ballExitRight, buttonUp, D5up, D6up, *RPOR, *RPINR;
     uint16_t servo_multiplier, servo_offset, servo1Open, servo1Close, servo2Open, servo2Close, servo3Open, servo3Close, servo4Open, servo4Close;
     WORD32 servo_temp;
+
+    D0 = 0; //this is the timer pin that connects to the arduino
 
     // These pins go high when a coin has been inserted and the start button has been pressed.
     D1_DIR = OUT;
     __asm__("nop");
     D2_DIR = OUT; 
+    __asm__("nop");
     D1 = 0; // player 1's side of the game
     __asm__("nop");
     D2 = 0; // player 2s side of the game
     __asm__("nop");
 
     // Four break beam sensors - 2 for winning conditions - 2 for loseing conditions
-    D0 = 0; //win right
-    D3 = 0; //win left
-    D4 = 0;	//exit right
-    D5 = 0; //exit left 
+    D3 = 0; //win right - was D0
+    D4 = 0; //win left - was D3
+    D5 = 0;	//exit right - was D4
+    D6 = 0; //exit left - was D5
 
     //START OF SERVO SETUP	
-    D6_DIR = OUT; //right ball return
+    D7_DIR = OUT; //right ball return
     __asm__("nop");
-    D7_DIR = OUT; //left ball return
+    D8_DIR = OUT; //left ball return
     __asm__("nop");
-    D8_DIR = OUT; //right ball start
+    D9_DIR = OUT; //right ball start
     __asm__("nop");
-    D9_DIR = OUT; // left ball start
+    D10_DIR = OUT; // left ball start
     __asm__("nop");
 
     servo_offset = (uint16_t)(FCY * SERVO_MIN_WIDTH);
@@ -46,10 +49,10 @@ int16_t main(void) {
     RPINR = (uint8_t *)&RPINR0;
 
     __builtin_write_OSCCONL(OSCCON & 0xBF);
-    RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D6
-    RPOR[D9_RP] = OC2_RP;  // connect the OC2 module output to pin D7
-    RPOR[D6_RP] = OC3_RP;  // connect the OC3 module output to pin D8
-    RPOR[D7_RP] = OC4_RP;  // connect the OC4 module output to pin D9
+    RPOR[D9_RP] = OC1_RP;  // connect the OC1 module output to pin D6
+    RPOR[D10_RP] = OC2_RP;  // connect the OC2 module output to pin D7
+    RPOR[D7_RP] = OC3_RP;  // connect the OC3 module output to pin D8
+    RPOR[D8_RP] = OC4_RP;  // connect the OC4 module output to pin D9
     __builtin_write_OSCCONL(OSCCON | 0x40);
 
     OC1CON1 = 0x1C0F;   // configure OC1 module to use the peripheral
@@ -109,23 +112,22 @@ int16_t main(void) {
     //END OF SERVO SETUP
 
     //Button setup
-    D10 = 0; //Button starts low
+    D12 = 0; //Button starts low
     D11_DIR = OUT; //LED in button
     __asm__("nop");
-    D11 = 0; //LET in button 
+    D11 = 0; //LED in button 
+    __asm__("nop");
 
     //Coin Receptor Setup
-    D12 = 0; //no coin has been inserted when this is one
+    D13 = 0; //no coin has been inserted when this is one
 
-    // This pin tells us when time has run out
-    D13 = 0;
 
     gameOn = 0; // the game starts off
     timeOver = 0;
     winRight = 0;
     winLeft = 0;
-    D4up = 1;
     D5up = 1;
+    D6up = 1;
     LED1 = 0;
     LED2 = 0;
     LED3 = 0; 
@@ -135,15 +137,15 @@ int16_t main(void) {
 	while(1) {
 
 		//Checking for wins
-		if(!D0){ //right side of the game has won
-			D1 = 0; //turns off the right side of the game
+		if(!D3){ //right side of the game has won
+			//D1 = 0; //turns off the right side of the game
 			__asm__("nop");
 			winRight = 1;
 			OC1RS = servo_offset + servo1Close*servo_multiplier; //closes the right ball returns
 			__asm__("nop");
 		}
-		if(!D3){
-			D2 = 0; //turns off the left side of the game
+		if(!D4){
+			//D2 = 0; //turns off the left side of the game
 			__asm__("nop");
 			winLeft = 1;
 			OC2RS = servo_offset + servo2Close*servo_multiplier; //closes the left ball returns
@@ -155,8 +157,8 @@ int16_t main(void) {
 		}
 
 		//What happens if you time out
-		if(D13 && gameOn){ //time has run out
-			timeOver = 1; 
+		if(D0 && gameOn){ //time has run out /
+			timeOver = 0; //CHANGE TO 1
 		}
 
 		if (timeOver){ //the time has turned off
@@ -167,22 +169,22 @@ int16_t main(void) {
 		}
 
 		//make sure that both balls are back before turning off the game
-		if((!D4 && D4up) && (timeOver || winRight)){//right ball return
+		if((!D5 && D5up) && (timeOver || winRight)){//right ball return
 			ballExitRight =  1;
-			D4up = 0; 
-			D1 = 0; //turns off the right side of the game
+			D5up = 0; 
+			//D1 = 01; //turns off the right side of the game
 		}
-		else if(D4) {
-			D4up = 1; 
+		else if(D5) {
+			D5up = 1; 
 
 		}
-		if ((!D5 && D5up) && (timeOver || winLeft)){
+		if ((!D6 && D6up) && (timeOver || winLeft)){
 			ballExitLeft  = 1;
-			D5up = 0; 
-			D2 = 0; //turns off the left side of the game 
+			D6up = 0; 
+			//D2 = 0; //turns off the left side of the game 
 		}
-		else if (D5){ //debouncing
-			D5up = 1;
+		else if (D6){ //debouncing
+			D6up = 1;
 		}
 
 		//both balls have been returned and the game is over -- reset everything
@@ -197,7 +199,7 @@ int16_t main(void) {
 			winRight = 0;
 			winLeft = 0;
 			win = 0;
-			D11 = 0; //turns off the start button
+			//D11 = 0; //turns off the start button
 			timeOver = 0;
 			ballExitLeft = 0;
 			ballExitRight = 0;
@@ -205,48 +207,39 @@ int16_t main(void) {
 		}
 
 		//Starting the game
-		if (D12 && !gameOn){ // the game has started --reset the win/lose lights?
+		if (D13){ // the game has started --reset the win/lose lights? //ADD NOT GAME ON
 			gameStart = 1;
-			D11 = 1; //light up the start button
-			__asm__("nop");
 			D1 = 0;
 			D2 = 0;
-			LED3 = 1;
+			LED2 = 1;
+			OC1RS = servo_offset + servo1Open*servo_multiplier; //opens the right ball returns
+			OC2RS = servo_offset + servo2Open*servo_multiplier; //opens the left ball returns 
+			D11 = 1; //light up the start button
+			__asm__("nop"); 
 		}
 
-		if ((D10 == 1) && gameStart){ // the player has pressed the start button, so the game actual has started
+		if (D12 && gameStart){ // the player has pressed the start button, so the game actual has started
 			D1 = 1; //right side of the game is on
-			__asm__("nop");
+			LED1 = 1; 
 			D2 = 1; //left side of the game is on
-			__asm__("nop");
+			LED3 = 1; 
 			gameOn = 1;
 			buttonUp = 0;
-
-			OC1RS = servo_offset + servo1Open*servo_multiplier; //opens the right ball returns
-			__asm__("nop");
-			OC2RS = servo_offset + servo2Open*servo_multiplier; //opens the left ball returns 
-			__asm__("nop");
 		}
 
-		if ((D10 == 1) && gameOn){ // the player has pressed the start button, so the game actual has started
-			LED1 = 1; 
+		if ((D12 == 1) && gameOn){ // the player has pressed the start button, so the game actual has started
 			if(D1){
 				OC3RS = servo_offset + servo3Open*servo_multiplier; //opens the right ball start
-				__asm__("nop");
 			}
 			if(D2){
 				OC4RS = servo_offset + servo4Open*servo_multiplier; //opens the left ball start
-				__asm__("nop");
 			}
 			gameStart = 0; 
 		}
 
-		if (D10 == 0){
-			LED1 = 0; 
+		if (D12 == 0){
 			OC3RS = servo_offset + servo3Close*servo_multiplier; //opens the right ball start
-			__asm__("nop");
-			OC4RS = servo_offset + servo4Close*servo_multiplier; //opens the left ball start
-			__asm__("nop");
+			OC4RS = servo_offset + servo4Close*servo_multiplier; //opens the left ball start);
 		}
 
 	}
