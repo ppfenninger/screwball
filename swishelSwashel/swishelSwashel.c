@@ -86,20 +86,20 @@ int16_t main(void) {
 
         if(D1 && buttonUp && IFS0bits.T3IF){
             IFS0bits.T3IF = 0;
-            OC1RS = 0;
+            OC1R = 0;
             buttonUp = 0;
-            OC1RS = 0;
+            OC1R = 0;
             LED1 = 1;
         }
         else if(direction && IFS0bits.T2IF && IFS0bits.T3IF){
             direction = 0;
-            OC1RS = servo_offset + servoHigh*servo_multiplier;
+            OC1R = servo_offset + servoHigh*servo_multiplier;
             IFS0bits.T2IF = 0; 
             LED1 = 0;
         }
         else if(IFS0bits.T2IF && IFS0bits.T3IF){
             direction = 1; 
-            OC1RS = servo_offset + servoLow*servo_multiplier;
+            OC1R = servo_offset + servoLow*servo_multiplier;
             IFS0bits.T2IF = 0; 
             LED1 = 0; 
         }
@@ -109,7 +109,7 @@ int16_t main(void) {
         }
 
         if(D2){
-            OC4RS = 6*OCRvalue;
+            OC4R = 6*OCRvalue;
         }
 
     }

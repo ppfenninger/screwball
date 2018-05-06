@@ -42,7 +42,7 @@ int16_t main(void) {
 
     // set OC1 pulse width to 1.5ms (i.e. halfway between 0.9ms and 2.1ms)
     servo_temp.ul = 0x8000 * (uint32_t)servo_multiplier;
-    OC1RS = servo_offset + servo1*servo_multiplier;
+     
     OC1R = 1;
     OC1TMR = 0;
 

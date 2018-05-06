@@ -10,7 +10,7 @@
 
 int16_t main(void) {
     init_elecanisms();
-    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoStartMagnet, servoStartRocket, OCRvalueLever, OCRvalueWeeble, goingUP, gameOn; 
+    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoStartMagnet, servoStartRocket, OCRvalueLever, OCRvalueWeeble, goingUP, gameOn, a0_analog, a1_analog, potRange, servoRange, range, a1_old, a0_old; 
     uint8_t *RPOR, *RPINR;
 
     gameOn = 0; 
@@ -61,6 +61,15 @@ int16_t main(void) {
     OCRvalueWeeble = 15*OC1RS/100; 
     OC1R = 0; 
     OC1TMR = 0;  
+
+    //Ball Pass Code
+    potRange = 1023;
+    servoRange = 65535;
+    range = servoRange/potRange;
+    a0_analog = 1; 
+    a1_analog = 1; 
+    a0_old = 0;
+    a1_old = 0; 
 
 
     D7_DIR = OUT; //rocketPass servo
@@ -125,6 +134,9 @@ int16_t main(void) {
     D12 = 0;
     D13 = 0;
 
+    
+
+
 
 	while(1) {
 		if(D12 && D13){
@@ -188,9 +200,37 @@ int16_t main(void) {
 			else{
 				OC1R = 0;}
 
-			//RocketPass Servo
+            a0_analog = read_analog(A0_AN);
+            a1_analog = read_analog(A1_AN);
 
-			//MagnetPass Servo
+            
+            if(a0_analog > 500){
+                LED1 = 1;
+                LED2 = 0;}
+            else{
+                LED1 = 0;
+                LED2 = 1;}
+
+            if(a0_analog > a0_old > 30){
+               OC3RS = a0_analog*range*servo_multiplier + servo_offset; //magnet Pass
+               a0_old = a0_analog; 
+            }
+            else if(a0_old - a0_analog > 30){
+                OC3RS = a0_analog*range*servo_multiplier + servo_offset; //magnet Pass
+                a0_old = a0_analog; 
+            }
+
+            if(a1_analog - a1_old > 30){
+               OC2RS = a1_analog*range*servo_multiplier + servo_offset; //rocket Pass
+               a1_old = a1_analog; 
+            }
+            else if(a1_old - a1_analog > 30){
+                OC2RS = a1_analog*range*servo_multiplier + servo_offset; //rocket Pass
+                a1_old = a1_analog; 
+            }
+            
+
+
 
 		}
 	}

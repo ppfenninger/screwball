@@ -15,6 +15,16 @@ int16_t main(void) {
 	while(1) {
 
 
+		D1 = 1;
+		__asm__("nop");
+		D2 = 1; 
+		__asm__("nop");
+		D3 = 1; 
+		__asm__("nop");
+		D4 = 1; 
+		__asm__("nop");
+		D0 = 1; 
+		__asm__("nop");
 
 		if (D12){
 			D1 = 1; 
