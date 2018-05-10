@@ -10,7 +10,8 @@
 
 int16_t main(void) {
     init_elecanisms();
-    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoCurrentSwish, servoLowSwish, servoHighSwish, servoStartMoon, OCRvaluePopper, OCRvalueSwish, goingUP, gameOn, buttonUp, direction; 
+    WORD32 servo_temp1;
+    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoCurrentSwish, servoLowSwish, servoHighSwish, servoStartMoon, OCRvaluePopper, OCRvalueSwish, goingUP, gameOn, direction, servoValue1, potRange, servoRange, range, a0_analog; 
     uint8_t *RPOR, *RPINR;
 
     servo_offset = (uint16_t)(FCY * SERVO_MIN_WIDTH);
@@ -40,6 +41,14 @@ int16_t main(void) {
     D4 = 0; 
     __asm__("nop");
 
+    goingUP = 1;
+    T2CON = 0x0030;         // set Timer1 period to 0.5s
+    PR2 = 0x1869;
+
+    TMR2 = 0;               // set Timer1 count to 0
+    IFS0bits.T2IF = 0;      // lower Timer1 interrupt flag
+    T2CONbits.TON = 1;      // turn on Timer1  
+
 
     //Popper Code 
     D5_DIR = IN; //popper switch
@@ -54,21 +63,13 @@ int16_t main(void) {
     OC1CON1 = 0x1C06;  
     OC1CON2 = 0x001F;   
     OC1RS = (uint16_t)(FCY / 1e4 - 1.);
-    OCRvaluePopper = 10*OC1RS/100; 
+    OCRvaluePopper = 5*OC1RS/100; 
     OC1R = 0; 
     OC1TMR = 0; 
-    goingUP = 1;
-    T1CON = 0x0030;         // set Timer1 period to 0.5s
-    PR1 = 0x1869;
-
-    TMR1 = 0;               // set Timer1 count to 0
-    IFS0bits.T1IF = 0;      // lower Timer1 interrupt flag
-    T1CONbits.TON = 1;      // turn on Timer1  
 
 
     // Swishel Swashel Code
-    direction = 0;
-    buttonUp = 1; 
+    direction = 0; 
     D7_DIR = IN; //swishel swashel rotate stop button
     D7 = 0;
     D8_DIR = IN; //swishel swashel pop button
@@ -98,28 +99,25 @@ int16_t main(void) {
     OC3CON1 = 0x1C06;  
     OC3CON2 = 0x001F;   
     OC3RS = (uint16_t)(FCY / 1e4 - 1.);
-    OCRvalueSwish = 70*OC3RS/100; 
+    OCRvalueSwish = 75*OC3RS/100; 
     OC3R = 0; 
     OC3TMR = 0;  
 
     //Set up timer for servo - Timer 3
     T3CON = 0x0030;         
-    PR3 = 0x1388;
+    PR3 = 0x1770;
     TMR3 = 0;               // set initial timer count to 0
     IFS0bits.T3IF = 0;      // lower Timer3 interrupt flag
     T3CONbits.TON = 1;      // turn on Timer3
 
-    //Set up timer for button - Timer 5
-    T2CON = 0X0030;        
-    PR2 = 0xFFFF;
-    TMR2 = 0;               // set initial timer count to 0
-    IFS0bits.T2IF = 1;      // lower Timer2 interrupt flag
-    T2CONbits.TON = 1;      // turn on Timer2
-
 
     //CatchMoon - code
-	D11_DIR = OUT; // lever toss solenoid
+	D11_DIR = OUT;
     __asm__("nop");
+
+    potRange = 1023; 
+    servoRange = 33000;
+    range = servoRange/potRange;
 
     servoStartMoon = 22768;
      __builtin_write_OSCCONL(OSCCON & 0xBF);
@@ -130,10 +128,10 @@ int16_t main(void) {
     OC4RS = servo_offset + servoStartMoon*servo_multiplier;
     OC4R = 1;
     OC4TMR = 0;
-    T4CON = 0x0010;     // configure Timer1 to have a period of 20ms
-    PR4 = 0x9C3F;
-    TMR4 = 0;
-    T4CONbits.TON = 1;
+    T1CON = 0x0010;     // configure Timer1 to have a period of 20ms
+    PR1 = 0x9C3F;
+    TMR1 = 0;
+    T1CONbits.TON = 1;
 
     D12_DIR = IN; //right in
     D13_DIR = IN; //left in
@@ -159,28 +157,28 @@ int16_t main(void) {
             D3 = 0;
             __asm__("nop");
             D4 = 0;
-            __asm__("nop");} //Change this
+            __asm__("nop");} 
 
 		if(gameOn && D13){ //add d12
 		//popper code
 			if (D5){
 				if(D4){
-					OC1R = 10*OCRvaluePopper;}
+					OC1R = 12*OCRvaluePopper;}
 				else if(D3){
-					OC1R = 9*OCRvaluePopper;}
+					OC1R = 11*OCRvaluePopper;}
 				else if(D2){
-					OC1R = 8*OCRvaluePopper;}
+					OC1R = 10*OCRvaluePopper;}
 				else if(D1) {
-					OC1R = 7*OCRvaluePopper;}
+					OC1R = 9*OCRvaluePopper;}
 				else if(D0){
-					OC1R = 6*OCRvaluePopper;}
+					OC1R = 8*OCRvaluePopper;}
 				else{
-					OC1R = 5*OCRvaluePopper;}}
+					OC1R = 7*OCRvaluePopper;}}
 			else {
 				OC1R = 0;
                 LED1 = 1; 
-				if(IFS0bits.T1IF){
-					IFS0bits.T1IF = 0;
+				if(IFS0bits.T2IF){
+					IFS0bits.T2IF = 0;
 					if (goingUP){
 						if(D4){
 							goingUP = 0;
@@ -211,30 +209,26 @@ int16_t main(void) {
 						else{
 							D4 = 0;}}}}
             //Swishel Swashel Code
-            if(D7 && buttonUp && IFS0bits.T2IF){
-                IFS0bits.T2IF = 0;
-                buttonUp = 0;}
-            else if(servoCurrentSwish > servoLowSwish && IFS0bits.T3IF && IFS0bits.T2IF && !direction){
+            if(D7){
+                OC2RS = servo_offset + servoCurrentSwish*servo_multiplier;}
+            else if(servoCurrentSwish > servoLowSwish && IFS0bits.T3IF && !direction){
                 servoCurrentSwish = servoCurrentSwish - 10; 
                 OC2RS = servo_offset + servoCurrentSwish*servo_multiplier;
                 IFS0bits.T3IF = 0; }
-            else if(servoCurrentSwish < servoHighSwish && IFS0bits.T3IF && IFS0bits.T2IF && direction){
+            else if(servoCurrentSwish < servoHighSwish && IFS0bits.T3IF && direction){
                 servoCurrentSwish = servoCurrentSwish + 10;
                 OC2RS = servo_offset + servoCurrentSwish*servo_multiplier;
                 IFS0bits.T3IF = 0; }
-            else if(servoCurrentSwish <= servoLowSwish && IFS0bits.T3IF && IFS0bits.T2IF){
+            else if(servoCurrentSwish <= servoLowSwish && IFS0bits.T3IF){
                 servoCurrentSwish = servoCurrentSwish + 10;
                 OC2RS = servo_offset + servoCurrentSwish*servo_multiplier;
                 direction = 1;
                 IFS0bits.T3IF = 0; }
-            else if(servoCurrentSwish >= servoHighSwish && IFS0bits.T3IF && IFS0bits.T2IF){
+            else if(servoCurrentSwish >= servoHighSwish && IFS0bits.T3IF){
                 servoCurrentSwish = servoCurrentSwish - 10;
                 OC2RS = servo_offset + servoCurrentSwish*servo_multiplier;
                 direction = 0;
                 IFS0bits.T3IF = 0;}
-
-            if(!D7){
-                buttonUp = 1;}
 
             if(D8){
                 OC3R = OCRvalueSwish;
@@ -242,8 +236,12 @@ int16_t main(void) {
             else{
                 OC3R = 0; 
             }}
-		if(gameOn && D13){
-			//Catch Moon Code
+		if(gameOn && D12){
+			a0_analog = read_analog(A0_AN);
+
+            servoValue1 = a0_analog*range;
+            servo_temp1.ul = (uint32_t)servoValue1 * (uint32_t)servo_multiplier; 
+            OC4RS = servo_temp1.w[1] + servo_offset;
 
 		}
 	}

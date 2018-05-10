@@ -10,7 +10,7 @@
 
 int16_t main(void) {
     init_elecanisms();
-    uint8_t gameOn, gameStart, win, winRight, winLeft, timeOver, ballExitLeft, ballExitRight, buttonUp, D5up, D6up, *RPOR, *RPINR;
+    uint8_t gameOn, gameStart, win, winRight, winLeft, timeOver, ballExitLeft, ballExitRight, buttonUp, D5up, D6up, *RPOR, *RPINR, displayWin;
     uint16_t servo_multiplier, servo_offset, servo1Open, servo1Close, servo2Open, servo2Close, servo3Open, servo3Close, servo4Open, servo4Close;
     WORD32 servo_temp;
 
@@ -111,6 +111,12 @@ int16_t main(void) {
     T1CONbits.TON = 1;
     //END OF SERVO SETUP
 
+    T2CON = 0x0030;         // set Timer1 period to 0.5s
+    PR2 = 0x7A11;
+	TMR2 = 0;               // set Timer1 count to 0
+    IFS0bits.T2IF = 0;      // lower Timer1 interrupt flag
+    T2CONbits.TON = 1;      // turn on Timer1
+
     //Button setup
     D12 = 0; //Button starts low
     D11_DIR = OUT; //LED in button
@@ -123,6 +129,7 @@ int16_t main(void) {
 
 
     gameOn = 0; // the game starts off
+    displayWin = 0; 
     timeOver = 0;
     winRight = 0;
     winLeft = 0;
@@ -138,22 +145,22 @@ int16_t main(void) {
 
 		//Checking for wins
 		if(!D3){ //right side of the game has won
-			//D1 = 0; //turns off the right side of the game
+			D1 = 0; //turns off the right side of the game
 			__asm__("nop");
-			winRight = 1;
+			winRight = 0; //CHange to 1
 			OC1RS = servo_offset + servo1Close*servo_multiplier; //closes the right ball returns
 			__asm__("nop");
 		}
 		if(!D4){
-			//D2 = 0; //turns off the left side of the game
+			D2 = 0; //turns off the left side of the game
 			__asm__("nop");
-			winLeft = 1;
+			winLeft = 1; //Change to 1
 			OC2RS = servo_offset + servo2Close*servo_multiplier; //closes the left ball returns
 			__asm__("nop"); 
 		}
 
 		if(winLeft && winRight){
-			win = 1;
+			win = 0;
 		}
 
 		//What happens if you time out
@@ -189,12 +196,6 @@ int16_t main(void) {
 
 		//both balls have been returned and the game is over -- reset everything
 		if((ballExitLeft && ballExitRight) && (timeOver || win)){
-			if(win){
-				D1 = 1;
-			}
-			else{
-				D2 = 1;
-			}
 			gameOn = 0; 
 			winRight = 0;
 			winLeft = 0;
@@ -203,11 +204,24 @@ int16_t main(void) {
 			timeOver = 0;
 			ballExitLeft = 0;
 			ballExitRight = 0;
-			LED3 = 0;  
+			LED3 = 0; 
+			displayWin = 1; 
+			IFS0bits.T2IF = 0;  
+		}
+
+		if(displayWin && IFS0bits.T2IF){
+			IFS0bits.T2IF = 0;
+			displayWin = 0; 
+			if(win){
+				D1 = 1;
+			}
+			else{
+				D2 = 1;
+			}
 		}
 
 		//Starting the game
-		if (D13){ // the game has started --reset the win/lose lights? //ADD NOT GAME ON
+		if (D13 && !gameOn){ // the game has started --reset the win/lose lights? //ADD NOT GAME ON
 			gameStart = 1;
 			D1 = 0;
 			D2 = 0;
@@ -216,6 +230,13 @@ int16_t main(void) {
 			OC2RS = servo_offset + servo2Open*servo_multiplier; //opens the left ball returns 
 			D11 = 1; //light up the start button
 			__asm__("nop"); 
+		}
+
+		if (gameStart){
+			OC2RS = servo_offset + servo2Open*servo_multiplier; //opens the left ball returns 
+			__asm__("nop"); 
+			OC1RS = servo_offset + servo1Open*servo_multiplier; //opens the right ball returns
+			__asm__("nop");
 		}
 
 		if (D12 && gameStart){ // the player has pressed the start button, so the game actual has started

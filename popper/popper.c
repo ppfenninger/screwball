@@ -52,7 +52,7 @@ int16_t main(void) {
     OC1TMR = 0;         // set OC1 timer count to 
 
 	while(1) {
-		if (0){
+		if (D10 == 1){
 			if(D4){
 				OC1R = 10*OCRvalue;
 			}

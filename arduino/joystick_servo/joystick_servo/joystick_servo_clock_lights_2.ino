@@ -27,12 +27,12 @@ Connect SCL to A5, SDA to A4
 Adafruit_7segment matrix = Adafruit_7segment(); 
 
 #include <Adafruit_NeoPixel.h>
-#define PIN      6
+#define PIN      4
 #define N_LEDS 60
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(N_LEDS, PIN, NEO_GRB + NEO_KHZ800);
  
-Servo horizontalservo_j1;  // create servo objects to control a servo 
+Servo horizontalservo_j1; 
 Servo verticalservo_j1; 
 Servo horizontalservo_j2;  
 Servo verticalservo_j2;  
@@ -112,7 +112,7 @@ void setup() {
   verticalservo_j1.attach(11);  // attaches the servo on pin 9 to the servo object 
 
   horizontalservo_j2.attach(9);  // attaches the servo on pin 9 to the servo object 
-  verticalservo_j2.attach(8);  // attaches the servo on pin 9 to the servo object 
+  verticalservo_j2.attach(6);  // attaches the servo on pin 9 to the servo object 
 
   horizontalservo_j1.write(100);
   verticalservo_j1.write(84);
@@ -138,7 +138,7 @@ void setup() {
 
   matrix.setBrightness(8);
 
-  counterMax = 180; //time in seconds
+  counterMax = 30; //time in seconds
   counter = counterMax; 
 
   minute = counter/60;
@@ -208,48 +208,58 @@ void loop() {
 
   if (currentTime - previousTimeClock >= 1000){
     if (game_over == 0){
-    if ((left_status == LOW) && (right_status == LOW)){
-      game_over = 1;
-      game_won = 1;
-      victory_lights();
-      game_on = 0;
-    }
-    else{
-    if ((left_status == LOW)){
-       left_on = 0;
-       if (currentTime - previousTimeLights > 100){
-        side_won_lights(0);
-       }
-    }
-    else{
-       if (currentTime - previousTimeLights > 100){
-      side_not_won_lights(0);
-       }
-    }
-     if ((right_status == LOW)){
-       right_on = 0;
-       if (currentTime - previousTimeLights > 100){
-        side_won_lights(1);
-       }
-    }
-    else{
-       if (currentTime - previousTimeLights > 100){
-      side_not_won_lights(1);
-       }
-    }
-    }
+      if ((left_status == LOW) && (right_status == LOW)){
+        game_over = 1;
+        game_won = 1;
+        victory_lights();
+        game_on = 0;
+      }
+      else{
+        if ((left_status == LOW)){
+           left_on = 0;
+             if (currentTime - previousTimeLights > 100){
+                side_won_lights(0);
+             }
+        }
+        else{
+           if (currentTime - previousTimeLights > 100){
+            side_not_won_lights(0);
+           }
+        }
+         if ((right_status == LOW)){
+           right_on = 0;
+           if (currentTime - previousTimeLights > 100){
+            side_won_lights(1);
+           }
+        }
+        else{
+           if (currentTime - previousTimeLights > 100){
+            side_not_won_lights(1);
+           }
+        }
+      }
+      
+      if (game_over == 0){
+         counter --;
+      }
     
-    if (game_over == 0){
-       counter --;
+      if (counter <= 0){
+        game_over = 1; 
+        digitalWrite(outPin, HIGH);
+      }
     }
 
-    if (counter < 0){
-      game_over = 1; 
-      digitalWrite(outPin, HIGH);
+    if ((game_over == 1) && (left_status == LOW)){
+        left_on = 0;
     }
+    if ((game_over == 1) && (right_status == LOW)){
+        right_on = 0;
+    }
+    if ((game_over == 1) && (left_status == LOW) && (right_status == LOW)){
+        game_on = 0;
     }
 
-    if (game_over){
+    if (game_on == 0){
       if ((left_status == LOW) && (right_status == HIGH)){
         game_won = 1;
         game_lost = 0;
@@ -634,6 +644,3 @@ static void pregame_lights(){
   green = strip.Color(0, 255, 0);
   blue = strip.Color(0, 0, 255);
  */
-
-
-

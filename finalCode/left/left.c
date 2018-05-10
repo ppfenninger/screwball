@@ -10,7 +10,8 @@
 
 int16_t main(void) {
     init_elecanisms();
-    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoStartMagnet, servoStartRocket, OCRvalueLever, OCRvalueWeeble, goingUP, gameOn, a0_analog, a1_analog, potRange, servoRange, range, a1_old, a0_old; 
+    WORD32 servo_temp1, servo_temp2;
+    uint16_t servo_multiplier, servo_offset, servoLowRocket, servoStartMagnet, servoStartRocket, OCRvalueLever, OCRvalueWeeble, goingUP, gameOn, a0_analog, a1_analog, potRange, servoRange, range, servoValue1, servoValue2; 
     uint8_t *RPOR, *RPINR;
 
     gameOn = 0; 
@@ -58,7 +59,7 @@ int16_t main(void) {
 
     OC1RS = (uint16_t)(FCY / 1e4 - 1.);
 
-    OCRvalueWeeble = 15*OC1RS/100; 
+    OCRvalueWeeble = 40*OC1RS/100; 
     OC1R = 0; 
     OC1TMR = 0;  
 
@@ -67,10 +68,12 @@ int16_t main(void) {
     servoRange = 65535;
     range = servoRange/potRange;
     a0_analog = 1; 
-    a1_analog = 1; 
-    a0_old = 0;
-    a1_old = 0; 
+    a1_analog = 1;
 
+    T1CON = 0x0010;     // configure Timer1 to have a period of 20ms
+    PR1 = 0x9C3F;
+    TMR1 = 0;
+    T1CONbits.TON = 1; 
 
     D7_DIR = OUT; //rocketPass servo
     __asm__("nop");
@@ -83,11 +86,6 @@ int16_t main(void) {
     OC2RS = servo_offset + servoStartRocket*servo_multiplier;
     OC2R = 1;
     OC2TMR = 0;
-    T2CON = 0x0010;     // configure Timer1 to have a period of 20ms
-    PR2 = 0x9C3F;
-    TMR2 = 0;
-    T2CONbits.TON = 1;
-    
 
 
     D8_DIR = OUT; //magnetPass servo
@@ -101,21 +99,17 @@ int16_t main(void) {
     OC3RS = servo_offset + servoStartMagnet*servo_multiplier;
     OC3R = 1;
     OC3TMR = 0;
-    T3CON = 0x0010;     // configure Timer3 to have a period of 20ms
-    PR3 = 0x9C3F;
-    TMR3 = 0;
-    T3CONbits.TON = 1; 
-    
+
     //Levertoss - code
     D9_DIR = IN; //levertoss switch
     D9 = 0; 
 	D10_DIR = OUT; // lever toss solenoid
 
-	T1CON = 0x0030;         // set Timer1 period to 0.5s
-    PR1 = 0x1869;
-	TMR1 = 0;               // set Timer1 count to 0
-    IFS0bits.T1IF = 0;      // lower Timer1 interrupt flag
-    T1CONbits.TON = 1;      // turn on Timer1
+	T2CON = 0x0030;         // set Timer1 period to 0.5s
+    PR2 = 0x1869;
+	TMR2 = 0;               // set Timer1 count to 0
+    IFS0bits.T2IF = 0;      // lower Timer1 interrupt flag
+    T2CONbits.TON = 1;      // turn on Timer1
 
     __asm__("nop");
     __builtin_write_OSCCONL(OSCCON & 0xBF);
@@ -124,7 +118,7 @@ int16_t main(void) {
     OC4CON1 = 0x1C06;  
     OC4CON2 = 0x001F;   
     OC4RS = (uint16_t)(FCY / 1e4 - 1.);
-    OCRvalueLever = 5*OC4RS/100; 
+    OCRvalueLever = 10*OC4RS/100; 
     OC4R = 0; 
     OC4TMR = 0;  
 
@@ -142,7 +136,17 @@ int16_t main(void) {
 		if(D12 && D13){
 			gameOn = 1;}
 		else if(!D12 && !D13){
-			gameOn = 0;} //CHANGE BACK TO 0
+			gameOn = 0; //CHANGE BACK TO 0
+            D0 = 0;
+            __asm__("nop");
+            D1 = 0;
+            __asm__("nop"); 
+            D2 = 0;
+            __asm__("nop");
+            D3 = 0;
+            __asm__("nop");
+            D4 = 0;
+            __asm__("nop");} 
 
 		if(gameOn && D12){ //and D12
 		//Lever toss code
@@ -161,8 +165,8 @@ int16_t main(void) {
 					OC4R = 5*OCRvalueLever;}}
 			else {
 				OC4R = 0;
-				if(IFS0bits.T1IF){
-					IFS0bits.T1IF = 0;
+				if(IFS0bits.T2IF){
+					IFS0bits.T2IF = 0;
 					if (goingUP){
 						if(D4){
 							goingUP = 0;
@@ -203,31 +207,14 @@ int16_t main(void) {
             a0_analog = read_analog(A0_AN);
             a1_analog = read_analog(A1_AN);
 
-            
-            if(a0_analog > 500){
-                LED1 = 1;
-                LED2 = 0;}
-            else{
-                LED1 = 0;
-                LED2 = 1;}
+            servoValue1 = a0_analog*range;
+            servo_temp1.ul = (uint32_t)servoValue1 * (uint32_t)servo_multiplier; 
+            OC2RS = servo_temp1.w[1] + servo_offset;
 
-            if(a0_analog > a0_old > 30){
-               OC3RS = a0_analog*range*servo_multiplier + servo_offset; //magnet Pass
-               a0_old = a0_analog; 
-            }
-            else if(a0_old - a0_analog > 30){
-                OC3RS = a0_analog*range*servo_multiplier + servo_offset; //magnet Pass
-                a0_old = a0_analog; 
-            }
+            servoValue2 = a1_analog*range;
+            servo_temp2.ul = (uint32_t)servoValue2 * (uint32_t)servo_multiplier; 
+            OC3RS = servo_temp2.w[1] + servo_offset;
 
-            if(a1_analog - a1_old > 30){
-               OC2RS = a1_analog*range*servo_multiplier + servo_offset; //rocket Pass
-               a1_old = a1_analog; 
-            }
-            else if(a1_old - a1_analog > 30){
-                OC2RS = a1_analog*range*servo_multiplier + servo_offset; //rocket Pass
-                a1_old = a1_analog; 
-            }
             
 
 
